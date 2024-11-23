@@ -9,6 +9,7 @@ from random import randint
 
 bot = telebot.TeleBot('7940109673:AAFXwqcP386ahTjV-kmkKJnWg-zrxgWepsw')
 
+
 array_of_horoscope = [
     'Сегодня неожиданные повороты ситуации (включая странные поступки старых друзей, капризы детей и оригинальные причуды любимого человека) не слишком удивят Козерогов и не станут для них источником фатальных огорчений. Наоборот, многие Козероги найдут для себя в событиях дня некую выгоду, например, возможность заработать, обновить часть своей жизни или закрыть какую-то страницу в своей биографии',
     'Сегодня Водолеи могут чаще обычного сталкиваться с капризами близких или с побочными эффектами своих нестандартных бытовых привычек. Непросты и отношения с внешним миром (в том числе, с целевой большой аудиторией, если планируется публичная карьера). Одной из проблем дня может оказаться свободолюбие. Возможен неожиданный поворот в общении с начальством, партнером, друзьями, детьми или родителями.',
@@ -24,7 +25,9 @@ array_of_horoscope = [
     'Сегодня Стрельцов могут ждать нештатные ситуации на работе, в связи с финансовыми делами или здоровьем. В течение дня возможны отступления от привычного расписания, диеты, бюджета или бытового уклада, зато возможен сюрприз, эксперимент или нововведение. Может удивить каприз питомца, нетипичное поведение друга, помощника, врача, кредитора или должника, представителя учреждения или сообщества.'
 ]
 
+# Словарь для каждого пользователя по отложенному сообщению
 users_shed = {}
+# Словарь по игрокам которые играют
 users_play = {}
 
 def random_horoscope_f():
@@ -33,6 +36,7 @@ def random_horoscope_f():
 
         return arr_file[randint(0, 11)]
 
+#Обработчик очереди
 def run_schedule_tasks():
     while True:
         schedule.run_pending()
@@ -48,8 +52,9 @@ def word_game(message):
     chat_id = message.chat.id
     bot.send_message(chat_id, 'Вам необходимо указать два знака зодиака через пробел (например: Весы Лев)')
     bot.send_message(chat_id, 'Чтобы остановить игру напишите - скорпион')
-    users_play[chat_id] = True
+    users_play[chat_id] = True #Инициализируем id игрока
 
+#Запускаем игру
 @bot.message_handler(func=lambda message: message.chat.id in users_play and users_play[message.chat.id] == True)
 def word_answer(message):
     chat_id = message.chat.id
@@ -63,16 +68,19 @@ def word_answer(message):
         except ValueError:
             bot.send_message(chat_id, 'Неверный формат ввода, пожалуйста укажите два знака зодиака через пробел')
 
+#Отправка отложенных сообщений
 @bot.message_handler(commands=['horoscope'])
 def every_hour(message):
     chat_id = message.chat.id
     if (chat_id in users_shed) and (len(schedule.get_jobs(str(chat_id))) > 0):
         bot.send_message(chat_id, 'Гороскоп уже включён, чтобы выключить - "/stop_horoscope"')
     else:
+        #Бот отправляет рандомный гороскоп из файла каждый час, чтобы посмотреть работу можно поменять hour на minute
         schedule.every().hour.do(lambda : bot.send_message(chat_id, random_horoscope_f())).tag(str(chat_id))
         users_shed[chat_id] = True
         bot.send_message(chat_id, 'Гороскоп включён')
 
+#Функция очистки очереди
 @bot.message_handler(commands=['stop_horoscope'])
 def stop(message):
     chat_id = message.chat.id
