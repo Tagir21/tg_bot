@@ -30,6 +30,7 @@ users_shed = {}
 # Словарь по игрокам которые играют
 users_play = {}
 
+
 def random_horoscope_f():
     with open('horoscopes.txt', 'r', encoding='utf-8') as f:
         arr_file = f.readlines()
@@ -46,6 +47,7 @@ def run_schedule_tasks():
 def random_horoscope(message):
     bot.send_message(message.chat.id, array_of_horoscope[randint(0, 11)])
     bot.send_message(message.chat.id, 'Чтобы подписаться на рассылку гороскопов - введи /horoscope')
+    stat(message)
 
 @bot.message_handler(commands=['play'])
 def word_game(message):
@@ -53,7 +55,7 @@ def word_game(message):
     bot.send_message(chat_id, 'Вам необходимо указать два знака зодиака через пробел (например: Весы Лев)')
     bot.send_message(chat_id, 'Чтобы остановить игру напишите - скорпион')
     users_play[chat_id] = True #Инициализируем id игрока
-
+    stat(message)
 #Запускаем игру
 @bot.message_handler(func=lambda message: message.chat.id in users_play and users_play[message.chat.id] == True)
 def word_answer(message):
@@ -67,7 +69,7 @@ def word_answer(message):
             bot.send_message(chat_id, f'Совместимость {sign1} и {sign2} - {randint(0, 100)}%')
         except ValueError:
             bot.send_message(chat_id, 'Неверный формат ввода, пожалуйста укажите два знака зодиака через пробел')
-
+    stat(message)
 #Отправка отложенных сообщений
 @bot.message_handler(commands=['horoscope'])
 def every_hour(message):
@@ -79,7 +81,7 @@ def every_hour(message):
         schedule.every().hour.do(lambda : bot.send_message(chat_id, random_horoscope_f())).tag(str(chat_id))
         users_shed[chat_id] = True
         bot.send_message(chat_id, 'Гороскоп включён')
-
+    stat(message)
 #Функция очистки очереди
 @bot.message_handler(commands=['stop_horoscope'])
 def stop(message):
@@ -90,8 +92,11 @@ def stop(message):
         bot.send_message(chat_id, 'Гороскоп выключен')
     else:
         bot.send_message(chat_id, 'Что - то пошло не так')
-
-
+    stat(message)
+@bot.message_handler(func=lambda message: True)
+def stat(message):
+    with open("log.txt", 'a') as f:
+        f.write(f"{message.text}\n")
 
 if __name__ == '__main__':
     scheduleThread = Thread(target=run_schedule_tasks)
